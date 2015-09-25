@@ -1,0 +1,120 @@
+---
+title: "Machine Learning Project"
+author: "Brian Canute"
+date: "Sunday, September 06, 2015"
+output: html_document
+abstract: A machine learning strategy will be applied to a data set of human movement data predicting an expert's judgement of the quality of a gymnastic skill. The predictive model will then be applied to a second test data set to see how well it performs on data set it has never seen before. Various measures of outcome accuracy and parameter variance will be used along the way to assist in tuning the model.
+---
+
+Machine Learning is a realtively young, technology that has emerged from the traditional area of statistics aided greatly by the recent computer revolution.  Canonical concepts and vocabulary are still being defined but it is generally agreed that a machine learning model succeeds through its ability to predict rather than explain.
+
+This paper will therefore treat the machine metrics as a black box; 159 columns of mainly dynamic spatial data that predicts column 160.
+
+The outcome variable in column 160 relates to six young health participants who were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl at five different qualitative levels of human movement expertise:    
+(Class A): exactly according to the specification,    
+(Class B): throwing the elbows to the front,     
+(Class C): lifting the dumbbell only halfway,     
+(Class D): lowering the dumbbell only halfway, and    
+(Class E): throwing the hips to the front.
+
+More details can be found at: http://groupware.les.inf.puc-rio.br/har#ixzz3ktRql3d3
+
+## Raw Data and R Library Packages Used
+
+opts_chunk$set(warning=FALSE)
+
+```{r set_up,echo=FALSE}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+library(e1071)
+library(randomForest)
+library(plyr)
+set.seed(1)
+testing <- read.csv(file="pml-testing.csv",na.strings=c("NA","#DIV/0!",""))
+training <- read.csv(file="pml-training.csv",na.strings=c("NA","#DIV/0!",""))
+```
+
+## Tidying the Data
+
+```{r tidy_data,echo=FALSE}
+#check that all the column names match
+colnames(testing)[160] <- "classe"
+all.equal(names(training[,-160]),names(testing[,-160]))
+#check the testing set for na columns
+col_na_sum = apply(testing,2,function(x) {sum(is.na(x))})
+unique(col_na_sum) # very neat; na's either in every row or in none
+testing = testing[,which(col_na_sum == 0)]# simply trim out the na columns
+training = training[,which(col_na_sum == 0)]# from both datasets
+#trim out some time oriented columns that are not useful in this context
+testing <- testing[,-c(1:7)]
+training <- training[,-c(1:7)]
+#check for variances that are too low for useful prediction and trim them out.
+nzv <- nearZeroVar(training, saveMetrics=TRUE)
+training <- training[,nzv$nzv==FALSE]
+nzv <- nearZeroVar(testing, saveMetrics=TRUE)
+testing <- testing[,nzv$nzv==FALSE]
+dim(testing)
+dim(training)
+```
+
+## Split the Training Set
+
+```{r split_data,echo=FALSE}
+in.training <- createDataPartition(training$classe, p=0.70, list=F)
+learning <- training[in.training, ]
+validation <- training[-in.training, ]
+```
+
+## Cart Tree Model
+
+```{r cart,echo=FALSE}
+set.seed(245)
+mod_cart <- train(classe ~ ., data = learning, method="rpart")
+print(mod_cart, digits=3)
+fancyRpartPlot(mod_cart$finalModel)
+p_cart <- predict(mod_cart,newdata=validation)
+confusionMatrix(validation[,53],p_cart)$table
+confusionMatrix(validation[,53],p_cart)$overall[1]
+```
+
+## Random Forest Model
+
+```{r rf,echo=FALSE}
+control.parms <- trainControl(method="cv", 5)
+mod_rf <- train(classe ~ ., data=learning, method="rf", trControl=control.parms, ntree=251)
+print(mod_rf, digits=3)
+p_rf <- predict(mod_rf,newdata=validation)
+confusionMatrix(validation[,53],p_rf)$table
+confusionMatrix(validation[,53],p_rf)$overall[1]
+plot(mod_rf)
+```
+
+## Boosting Model
+
+```{r gbm,echo=FALSE}
+set.seed(12345)
+mod_gbm <- train(classe ~ ., data=learning, method = "gbm",verbose = FALSE)
+print(mod_gbm, digits=3)
+p_gbm <- predict(mod_gbm,newdata=validation)
+confusionMatrix(validation[,53],p_gbm)$table
+confusionMatrix(validation[,53],p_gbm)$overall[1]
+plot(mod_gbm)
+```
+
+## Submit Predictions on the Test Set
+
+```{r submit,echo=FALSE}
+submit <- predict(mod_rf,newdata=testing)
+submit
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+#pml_write_files(submit)
+```
