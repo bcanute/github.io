@@ -6,7 +6,15 @@ output: html_document
 abstract: A machine learning strategy will be applied to a data set of human movement data predicting an expert's judgement of the quality of a gymnastic skill. The predictive model will then be applied to a second test data set to see how well it performs on data set it has never seen before. Various measures of outcome accuracy and parameter variance will be used along the way to assist in tuning the model.
 ---
 
+<<<<<<< HEAD
+```{r global_options,echo=FALSE}
+knitr::opts_chunk$set(warning=FALSE,message=FALSE)
+```
+
+Machine Learning is a realtively young, technology that has emerged from the traditional area of statistics aided greatly by the recent computer revolution.  Canonical concepts and vocabulary are still being defined but it is generally agreed that a machine learning model succeeds through its ability to predict rather than explain. The reputation of the area has also been extended via a series of Kaggle-style competitions, characterised by very creative, statistically minded computer scientists stretching their computers to the limit to cross validate their predictions against an unknown test set, in exchange for some rather spectacular prize money.  Stripped of the big bucks, that is essentially what this course assignment is about.
+=======
 Machine Learning is a realtively young, technology that has emerged from the traditional area of statistics aided greatly by the recent computer revolution.  Canonical concepts and vocabulary are still being defined but it is generally agreed that a machine learning model succeeds through its ability to predict rather than explain.
+>>>>>>> github.io/master
 
 This paper will therefore treat the machine metrics as a black box; 159 columns of mainly dynamic spatial data that predicts column 160.
 
@@ -19,11 +27,16 @@ The outcome variable in column 160 relates to six young health participants who 
 
 More details can be found at: http://groupware.les.inf.puc-rio.br/har#ixzz3ktRql3d3
 
+<<<<<<< HEAD
+```{r set_up,warning=FALSE,message=FALSE}
+knitr::opts_chunk$set(warning=FALSE,message=FALSE)
+=======
 ## Raw Data and R Library Packages Used
 
 opts_chunk$set(warning=FALSE)
 
 ```{r set_up,echo=FALSE}
+>>>>>>> github.io/master
 library(caret)
 library(rpart)
 library(rpart.plot)
@@ -33,13 +46,23 @@ library(e1071)
 library(randomForest)
 library(plyr)
 set.seed(1)
+<<<<<<< HEAD
+setwd("C:/Users/Brian/Documents/Machine Learning/")
+=======
+>>>>>>> github.io/master
 testing <- read.csv(file="pml-testing.csv",na.strings=c("NA","#DIV/0!",""))
 training <- read.csv(file="pml-training.csv",na.strings=c("NA","#DIV/0!",""))
 ```
 
 ## Tidying the Data
 
+<<<<<<< HEAD
+Columns with missing data were excluded as were variables that showed insufficient variance to realistically contribute to the predictive power of the model.
+
+```{r tidy_data}
+=======
 ```{r tidy_data,echo=FALSE}
+>>>>>>> github.io/master
 #check that all the column names match
 colnames(testing)[160] <- "classe"
 all.equal(names(training[,-160]),names(testing[,-160]))
@@ -62,13 +85,25 @@ dim(training)
 
 ## Split the Training Set
 
+<<<<<<< HEAD
+The conventional approach is to tune the model using a large training data set, cross validate the model using a smaller validation data set and finally, to submit the best model to the test data set, which in this case contains 20 records with hidden outcomes.  The test outcomes produced by our selected model will be submitted to a machine to test the accuracy of our model. Our validation data was created by excising 30% from the training data.
+
+```{r split_data}
+=======
 ```{r split_data,echo=FALSE}
+>>>>>>> github.io/master
 in.training <- createDataPartition(training$classe, p=0.70, list=F)
 learning <- training[in.training, ]
 validation <- training[-in.training, ]
 ```
 
+<<<<<<< HEAD
+## Cart(rPart) Tree Model
+
+The first model attempted involves a traditional tree structure traditionally used to predict categorical outcomes, like our Classe variable.
+=======
 ## Cart Tree Model
+>>>>>>> github.io/master
 
 ```{r cart,echo=FALSE}
 set.seed(245)
@@ -79,9 +114,19 @@ p_cart <- predict(mod_cart,newdata=validation)
 confusionMatrix(validation[,53],p_cart)$table
 confusionMatrix(validation[,53],p_cart)$overall[1]
 ```
+<<<<<<< HEAD
+The cross validation accuracy of this model when applied to the validation set is quite disappointing.  Fortunately, there have been a series of recent enhancements to the tree model.
+
 
 ## Random Forest Model
 
+The Random Forest is considered by Developers such as Hastie and Tibshirani to represent a good value in terms of accuracy, simplicity and computing overhead.
+
+=======
+
+## Random Forest Model
+
+>>>>>>> github.io/master
 ```{r rf,echo=FALSE}
 control.parms <- trainControl(method="cv", 5)
 mod_rf <- train(classe ~ ., data=learning, method="rf", trControl=control.parms, ntree=251)
@@ -91,9 +136,19 @@ confusionMatrix(validation[,53],p_rf)$table
 confusionMatrix(validation[,53],p_rf)$overall[1]
 plot(mod_rf)
 ```
+<<<<<<< HEAD
+The cross validation accuracy is clearly superior to the first tree model.
+
 
 ## Boosting Model
 
+Boosting aims to improve upon the basic ensemble approach of the Random Forest. Such enhancements in accuracy are based upon the artful manipulation of several tuning parameters, the patient slow tweaking of the model for very modest gains and an enormous amount of computing power, including parallel processing. Having attempted this model, I have concluded that it is currently beyond my limited abilities.  However, here is the best model I was able to produce on my home computer.
+
+=======
+
+## Boosting Model
+
+>>>>>>> github.io/master
 ```{r gbm,echo=FALSE}
 set.seed(12345)
 mod_gbm <- train(classe ~ ., data=learning, method = "gbm",verbose = FALSE)
@@ -104,8 +159,17 @@ confusionMatrix(validation[,53],p_gbm)$overall[1]
 plot(mod_gbm)
 ```
 
+<<<<<<< HEAD
+As can be seen, the accuracy while impressive is not as good as the results of the much simpler Random Forest.  My attempts to use some of the tuning parameters only met with frustration and a plethora of error messages, for which documentation was in short supply. Such is the chaotic outcome when you offer hackers $1meg to produce models that subsequently prove to be of limited commercial value; just like we do not all drive F1 Racing Cars.
+
 ## Submit Predictions on the Test Set
 
+As a result, I have contented myself with the Random Forest model, which I submitted to the machine. The reults appeared to have passed muster.
+
+=======
+## Submit Predictions on the Test Set
+
+>>>>>>> github.io/master
 ```{r submit,echo=FALSE}
 submit <- predict(mod_rf,newdata=testing)
 submit
